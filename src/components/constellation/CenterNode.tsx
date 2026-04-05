@@ -2,10 +2,13 @@
 
 import React from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
+import { useResearchState } from "@/hooks/useResearchState"
 
-function CenterNodeComponent({ data }: NodeProps) {
+function CenterNodeComponent({ data, id }: NodeProps) {
+  const selected = useResearchState((s) => s.selectedNodeId === id)
+
   return (
-    <div className="relative flex h-20 w-20 items-center justify-center">
+    <div className={`relative flex h-20 w-20 items-center justify-center cursor-pointer ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-full" : ""}`}>
       {/* Pulsing ring */}
       <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/30 to-primary/10" />

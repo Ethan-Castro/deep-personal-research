@@ -1,16 +1,20 @@
 "use client"
 
+import { useState } from "react"
 import { useResearchState } from "@/hooks/useResearchState"
 import { DomainSection } from "./DomainSection"
 import { MethodologyPanel } from "./MethodologyPanel"
 import { ExportButtons } from "./ExportButtons"
+import { PaperView } from "./PaperView"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { FileText } from "lucide-react"
 
 export function ReportView() {
   const sections = useResearchState((s) => s.reportSections)
   const findings = useResearchState((s) => s.findings)
+  const insights = useResearchState((s) => s.insights)
   const status = useResearchState((s) => s.status)
+  const [viewMode, setViewMode] = useState<"dashboard" | "paper">("dashboard")
 
   if (sections.length === 0) {
     if (status === "writing") {
@@ -26,9 +30,8 @@ export function ReportView() {
     return null
   }
 
-  const title = `Personal PI Report`
+  const title = `Personal PI Research Report`
 
-  // Build methodology from findings
   const methodology = {
     databasesSearched: [...new Set(findings.map((f) => f.sourceType))],
     papersReviewed: findings.length,
@@ -40,58 +43,73 @@ export function ReportView() {
     ],
   }
 
-  const overviewSections = sections.filter((s) => s.domain === "overview")
-  const healthSections = sections.filter((s) => s.domain === "health")
-  const careerSections = sections.filter((s) => s.domain === "career")
-  const methodSections = sections.filter((s) => s.domain === "methodology")
-
   return (
     <div className="flex h-full flex-col">
       {/* Sticky header */}
-      <div className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-3 backdrop-blur-sm">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        <ExportButtons sections={sections} title={title} />
+      <div className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-2 backdrop-blur-sm">
+        <h2 className="text-xs font-semibold truncate mr-2">{title}</h2>
+        <ExportButtons
+          sections={sections}
+          findings={findings}
+          insights={insights}
+          title={title}
+          viewMode={viewMode}
+          onViewChange={setViewMode}
+        />
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-6 p-4">
-          {overviewSections.map((s, i) => (
-            <DomainSection key={`overview-${i}`} section={s} />
-          ))}
+      {/* View body */}
+      {viewMode === "paper" ? (
+        <PaperView />
+      ) : (
+        <ScrollArea className="flex-1">
+          <div className="space-y-6 p-4">
+            {sections
+              .filter((s) => s.domain === "overview")
+              .map((s, i) => (
+                <DomainSection key={`overview-${i}`} section={s} />
+              ))}
 
-          {healthSections.length > 0 && (
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-emerald-500">
-                Health & Fitness
-              </h3>
-              <div className="space-y-4">
-                {healthSections.map((s, i) => (
-                  <DomainSection key={`health-${i}`} section={s} />
-                ))}
+            {sections.filter((s) => s.domain === "health").length > 0 && (
+              <div>
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-emerald-500">
+                  Health & Fitness
+                </h3>
+                <div className="space-y-4">
+                  {sections
+                    .filter((s) => s.domain === "health")
+                    .map((s, i) => (
+                      <DomainSection key={`health-${i}`} section={s} />
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {careerSections.length > 0 && (
-            <div>
-              <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-blue-500">
-                Career & Education
-              </h3>
-              <div className="space-y-4">
-                {careerSections.map((s, i) => (
-                  <DomainSection key={`career-${i}`} section={s} />
-                ))}
+            {sections.filter((s) => s.domain === "career").length > 0 && (
+              <div>
+                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-blue-500">
+                  Career & Education
+                </h3>
+                <div className="space-y-4">
+                  {sections
+                    .filter((s) => s.domain === "career")
+                    .map((s, i) => (
+                      <DomainSection key={`career-${i}`} section={s} />
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {methodSections.map((s, i) => (
-            <DomainSection key={`method-${i}`} section={s} />
-          ))}
+            {sections
+              .filter((s) => s.domain === "methodology")
+              .map((s, i) => (
+                <DomainSection key={`method-${i}`} section={s} />
+              ))}
 
-          <MethodologyPanel methodology={methodology} />
-        </div>
-      </ScrollArea>
+            <MethodologyPanel methodology={methodology} />
+          </div>
+        </ScrollArea>
+      )}
     </div>
   )
 }

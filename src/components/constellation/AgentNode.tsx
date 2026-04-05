@@ -3,10 +3,12 @@
 import React from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { useResearchState } from "@/hooks/useResearchState"
 
-function AgentNodeComponent({ data }: NodeProps) {
+function AgentNodeComponent({ data, id }: NodeProps) {
   const status = String(data.status ?? "running")
   const team = String(data.team ?? "")
+  const selected = useResearchState((s) => s.selectedNodeId === id)
 
   const teamColor =
     team === "health" || team === "orchestrator"
@@ -17,7 +19,7 @@ function AgentNodeComponent({ data }: NodeProps) {
 
   return (
     <div
-      className={`min-w-[140px] max-w-[180px] rounded-lg border-2 ${teamColor} bg-card p-3 shadow-md`}
+      className={`min-w-[140px] max-w-[180px] rounded-lg border-2 ${teamColor} bg-card p-3 shadow-md cursor-pointer transition-all hover:shadow-lg ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
     >
       <Handle type="target" position={Position.Top} className="!bg-muted-foreground" />
 

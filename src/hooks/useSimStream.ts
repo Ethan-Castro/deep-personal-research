@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react"
 import { useResearchState } from "./useResearchState"
-import { SIM_EVENTS } from "@/lib/simData"
+import { SIM_EVENTS, type SimEvent } from "@/lib/simData"
 import type { AgentEvent } from "@/lib/events"
 import type { Finding, Insight, ReportSection } from "@/lib/types"
 
@@ -12,7 +12,7 @@ function nextNodeId(prefix: string) {
   return `${prefix}_${++nodeCounter}`
 }
 
-export function useSimStream() {
+export function useSimStream(events?: SimEvent[]) {
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const store = useResearchState()
 
@@ -196,7 +196,8 @@ export function useSimStream() {
     let cumulativeDelay = 300 // initial connection delay
     const timeouts: ReturnType<typeof setTimeout>[] = []
 
-    for (const simEvent of SIM_EVENTS) {
+    const simEvents = events ?? SIM_EVENTS
+    for (const simEvent of simEvents) {
       cumulativeDelay += simEvent.delay
       const timeout = setTimeout(() => {
         processEvent(simEvent.event)

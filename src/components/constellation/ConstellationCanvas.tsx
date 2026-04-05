@@ -22,6 +22,7 @@ import { FindingNode } from "./FindingNode"
 import { SourceNode } from "./SourceNode"
 import { InsightNode } from "./InsightNode"
 import { CrossDomainEdge } from "./CrossDomainEdge"
+import { DetailPanel } from "./DetailPanel"
 
 const nodeTypes = {
   center: CenterNode,
@@ -39,6 +40,8 @@ function ConstellationInner() {
   const { fitView } = useReactFlow()
   const nodes = useResearchState((s) => s.nodes)
   const edges = useResearchState((s) => s.edges)
+  const selectNode = useResearchState((s) => s.selectNode)
+  const selectedNodeId = useResearchState((s) => s.selectedNodeId)
   const prevCountRef = useRef(0)
 
   // Re-layout when nodes are added (structural change)
@@ -66,31 +69,46 @@ function ConstellationInner() {
     // Handled by store — read-only flow
   }, [])
 
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      selectNode(node.id)
+    },
+    [selectNode]
+  )
+
+  const onPaneClick = useCallback(() => {
+    selectNode(null)
+  }, [selectNode])
+
   return (
-    <ReactFlow
-      nodes={layoutedNodes}
-      edges={layoutedEdges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      fitView
-      minZoom={0.1}
-      maxZoom={2}
-      proOptions={{ hideAttribution: true }}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-    >
-      <Controls position="bottom-left" showInteractive={false} />
-      <MiniMap
-        pannable
-        zoomable
-        position="bottom-right"
-        className="!bg-card/80 !border-border"
-      />
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
-    </ReactFlow>
+    <div className="relative h-full w-full">
+      <ReactFlow
+        nodes={layoutedNodes}
+        edges={layoutedEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        fitView
+        minZoom={0.1}
+        maxZoom={2}
+        proOptions={{ hideAttribution: true }}
+        nodesDraggable={false}
+        nodesConnectable={false}
+      >
+        <Controls position="bottom-left" showInteractive={false} />
+        <MiniMap
+          pannable
+          zoomable
+          position="bottom-right"
+          className="!bg-card/80 !border-border"
+        />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
+      </ReactFlow>
+      {selectedNodeId && <DetailPanel />}
+    </div>
   )
 }
 

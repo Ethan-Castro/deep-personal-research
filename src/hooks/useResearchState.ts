@@ -23,6 +23,9 @@ interface ResearchStore {
   nodes: Node[]
   edges: Edge[]
 
+  // Detail panel
+  selectedNodeId: string | null
+
   // Data
   findings: Finding[]
   insights: Insight[]
@@ -38,6 +41,7 @@ interface ResearchStore {
   addNode: (node: Node) => void
   updateNode: (id: string, data: Record<string, unknown>) => void
   addEdge: (edge: Edge) => void
+  selectNode: (id: string | null) => void
   addFinding: (finding: Finding) => void
   addInsight: (insight: Insight) => void
   addReportSection: (section: ReportSection) => void
@@ -51,6 +55,7 @@ const initialState = {
   status: "idle" as const,
   nodes: [],
   edges: [],
+  selectedNodeId: null,
   findings: [],
   insights: [],
   reportSections: [],
@@ -81,6 +86,8 @@ export const useResearchState = create<ResearchStore>((set) => ({
     set((state) => ({
       edges: [...state.edges, edge],
     })),
+
+  selectNode: (id) => set({ selectedNodeId: id }),
 
   addFinding: (finding) =>
     set((state) => ({

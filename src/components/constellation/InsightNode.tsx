@@ -4,10 +4,12 @@ import React from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import { EvidenceBadge } from "@/components/report/EvidenceBadge"
 import type { EvidenceGrade } from "@/lib/types"
+import { useResearchState } from "@/hooks/useResearchState"
 
-function InsightNodeComponent({ data }: NodeProps) {
+function InsightNodeComponent({ data, id }: NodeProps) {
   const grade = String(data.evidenceGrade ?? "C") as EvidenceGrade
   const domain = String(data.domain ?? "")
+  const selected = useResearchState((s) => s.selectedNodeId === id)
 
   const borderColor =
     domain === "cross_domain"
@@ -18,7 +20,7 @@ function InsightNodeComponent({ data }: NodeProps) {
 
   return (
     <div
-      className={`max-w-[200px] rounded-lg border-2 ${borderColor} bg-gradient-to-b from-amber-500/5 to-transparent p-3 shadow-lg`}
+      className={`max-w-[200px] rounded-lg border-2 ${borderColor} bg-gradient-to-b from-amber-500/5 to-transparent p-3 shadow-lg cursor-pointer transition-all hover:shadow-xl ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
     >
       <Handle type="target" position={Position.Top} className="!bg-amber-500" />
 
