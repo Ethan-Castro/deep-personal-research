@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Check, X, Loader2 } from "lucide-react"
-import type { AvatarState } from "./AvatarAura"
+import type { AvatarState } from "./types"
 
 interface AvatarStatusBadgeProps {
   state: AvatarState
@@ -11,8 +11,9 @@ interface AvatarStatusBadgeProps {
 
 export function AvatarStatusBadge({ state, size = 96 }: AvatarStatusBadgeProps) {
   const badgeSize = 22
-  const x = size - badgeSize / 2 - 2
-  const y = -badgeSize / 2 + 6
+  // Position badge at top-right of the avatar container
+  const right = -badgeSize / 2 + 2
+  const top = -badgeSize / 2 + 6
 
   const isActive = state === "thinking" || state === "searching" || state === "found" || state === "spawned"
   const isComplete = state === "complete"
@@ -21,55 +22,43 @@ export function AvatarStatusBadge({ state, size = 96 }: AvatarStatusBadgeProps) 
   return (
     <AnimatePresence mode="wait">
       {isActive && (
-        <motion.foreignObject
+        <motion.div
           key="active"
-          x={x}
-          y={y}
-          width={badgeSize}
-          height={badgeSize}
+          className="absolute flex items-center justify-center rounded-full bg-background border border-border shadow-sm"
+          style={{ width: badgeSize, height: badgeSize, right, top }}
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.5 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-background border border-border shadow-sm">
-            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          </div>
-        </motion.foreignObject>
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+        </motion.div>
       )}
       {isComplete && (
-        <motion.foreignObject
+        <motion.div
           key="complete"
-          x={x}
-          y={y}
-          width={badgeSize}
-          height={badgeSize}
+          className="absolute flex items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm"
+          style={{ width: badgeSize, height: badgeSize, right, top }}
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.5 }}
           transition={{ type: "spring", stiffness: 400, damping: 15 }}
         >
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40 shadow-sm">
-            <Check className="h-3 w-3 text-emerald-500" />
-          </div>
-        </motion.foreignObject>
+          <Check className="h-3 w-3 text-emerald-500" />
+        </motion.div>
       )}
       {isError && (
-        <motion.foreignObject
+        <motion.div
           key="error"
-          x={x}
-          y={y}
-          width={badgeSize}
-          height={badgeSize}
+          className="absolute flex items-center justify-center rounded-full bg-red-500/20 border border-red-500/40 shadow-sm"
+          style={{ width: badgeSize, height: badgeSize, right, top }}
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.5 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-red-500/20 border border-red-500/40 shadow-sm">
-            <X className="h-3 w-3 text-red-500" />
-          </div>
-        </motion.foreignObject>
+          <X className="h-3 w-3 text-red-500" />
+        </motion.div>
       )}
     </AnimatePresence>
   )

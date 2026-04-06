@@ -4,9 +4,9 @@ import { memo, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useResearchState } from "@/hooks/useResearchState"
 import { getAgentConfig } from "./agentConfig"
-import { AvatarAura, type AvatarState } from "./AvatarAura"
-import { AvatarFace } from "./AvatarFace"
+import { RiveAvatar } from "./RiveAvatar"
 import { AvatarStatusBadge } from "./AvatarStatusBadge"
+import type { AvatarState } from "./types"
 
 interface AgentAvatarProps {
   agentId: string
@@ -59,6 +59,9 @@ export const AgentAvatar = memo(function AgentAvatar({
 
   const thought = nodeData?.thought as string | undefined
 
+  // Icon badge size — bottom-left corner of avatar
+  const iconBadgeSize = 20
+
   return (
     <motion.div
       className="relative flex flex-col items-center gap-2 cursor-pointer"
@@ -89,9 +92,10 @@ export const AgentAvatar = memo(function AgentAvatar({
         )}
       </AnimatePresence>
 
-      {/* Avatar SVG */}
+      {/* Avatar container */}
       <motion.div
         className="relative"
+        style={{ width: size, height: size }}
         animate={
           avatarState === "found"
             ? { y: [0, -6, 0] }
@@ -107,44 +111,25 @@ export const AgentAvatar = memo(function AgentAvatar({
               : {}
         }
       >
-        <svg
-          width={size}
-          height={size}
-          viewBox={`0 0 ${size} ${size}`}
-          className={`transition-all duration-300 ${
-            isSelected
-              ? "drop-shadow-[0_0_12px_var(--tw-shadow-color)]"
-              : "hover:drop-shadow-[0_0_8px_var(--tw-shadow-color)]"
-          }`}
-          style={
-            {
-              "--tw-shadow-color": `${config.teamColor}40`,
-              filter: avatarState === "complete" ? "saturate(0.6)" : undefined,
-            } as React.CSSProperties
-          }
-        >
-          <AvatarAura state={avatarState} teamColor={config.teamColor} size={size} />
-          <AvatarFace state={avatarState} teamColor={config.teamColor} size={size} />
-          <AvatarStatusBadge state={avatarState} size={size} />
+        <RiveAvatar state={avatarState} teamColor={config.teamColor} size={size} />
 
-          {/* Specialty icon */}
-          <foreignObject
-            x={2}
-            y={size - 22}
-            width={20}
-            height={20}
-          >
-            <div
-              className="flex h-full w-full items-center justify-center rounded-full border shadow-sm"
-              style={{
-                backgroundColor: `${config.teamColor}15`,
-                borderColor: `${config.teamColor}30`,
-              }}
-            >
-              <config.icon className="h-2.5 w-2.5" style={{ color: config.teamColor }} />
-            </div>
-          </foreignObject>
-        </svg>
+        {/* Status badge — top-right */}
+        <AvatarStatusBadge state={avatarState} size={size} />
+
+        {/* Specialty icon — bottom-left */}
+        <div
+          className="absolute flex items-center justify-center rounded-full border shadow-sm"
+          style={{
+            width: iconBadgeSize,
+            height: iconBadgeSize,
+            left: 2,
+            bottom: 2,
+            backgroundColor: `${config.teamColor}15`,
+            borderColor: `${config.teamColor}30`,
+          }}
+        >
+          <config.icon className="h-2.5 w-2.5" style={{ color: config.teamColor }} />
+        </div>
 
         {/* Selection ring */}
         {isSelected && (
