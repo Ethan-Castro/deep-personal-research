@@ -8,7 +8,7 @@ import { ProgressBar } from "@/components/constellation/ProgressBar"
 import { StatusTimeline } from "@/components/shared/StatusTimeline"
 import { ResearchStage } from "@/components/stage/ResearchStage"
 import { TransparencyDock } from "@/components/transparency/TransparencyDock"
-import { ReportView } from "@/components/report/ReportView"
+import { OutputPanel } from "@/components/report/OutputPanel"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { Loader2, Map, Users } from "lucide-react"
@@ -26,7 +26,9 @@ export default function ResearchPage({
 
   const status = useResearchState((s) => s.status)
   const reportSections = useResearchState((s) => s.reportSections)
-  const hasReport = reportSections.length > 0
+  const workoutPlan = useResearchState((s) => s.workoutPlan)
+  const careerGuide = useResearchState((s) => s.careerGuide)
+  const hasOutputs = reportSections.length > 0 || !!workoutPlan || !!careerGuide
 
   if (status === "idle" || status === "connecting") {
     return (
@@ -46,7 +48,7 @@ export default function ResearchPage({
       <div className="flex h-screen">
         {/* Left panel */}
         <div
-          className={`relative flex flex-col ${hasReport ? "w-[65%]" : "w-full"} transition-all duration-500`}
+          className={`relative flex flex-col ${hasOutputs ? "w-[65%]" : "w-full"} transition-all duration-500`}
         >
           {/* Top bar */}
           <div className="absolute left-1/2 top-4 z-10 -translate-x-1/2 flex items-center gap-3">
@@ -93,10 +95,10 @@ export default function ResearchPage({
           )}
         </div>
 
-        {/* Right panel — Report viewer (slides in) */}
-        {hasReport && (
+        {/* Right panel — Output viewer (slides in) */}
+        {hasOutputs && (
           <div className="w-[35%] border-l border-border bg-card animate-in slide-in-from-right duration-500">
-            <ReportView />
+            <OutputPanel />
           </div>
         )}
       </div>

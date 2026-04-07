@@ -61,6 +61,13 @@ export async function generateBrief(
 function buildProfileSummary(profile: UserProfile, researchType: ResearchType): string {
   const parts: string[] = [`Name: ${profile.name}`]
 
+  // RFP mode: use the free-text RFP directly
+  if (researchType === "rfp" && profile.rfpText) {
+    parts.push(`\n--- Research Request (RFP) ---`)
+    parts.push(profile.rfpText)
+    return parts.join("\n")
+  }
+
   if ((researchType === "health" || researchType === "both") && profile.healthProfile) {
     const h = profile.healthProfile
     parts.push(`\n--- Health Profile ---`)

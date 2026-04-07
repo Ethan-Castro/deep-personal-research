@@ -70,35 +70,27 @@ export function ReportView() {
                 <DomainSection key={`overview-${i}`} section={s} />
               ))}
 
-            {sections.filter((s) => s.domain === "health").length > 0 && (
-              <div>
-                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-emerald-500">
-                  Health & Fitness
-                </h3>
-                <div className="space-y-4">
-                  {sections
-                    .filter((s) => s.domain === "health")
-                    .map((s, i) => (
-                      <DomainSection key={`health-${i}`} section={s} />
+            {[
+              { key: "health", label: "Health & Fitness", cls: "text-emerald-500" },
+              { key: "career", label: "Career & Education", cls: "text-blue-500" },
+              { key: "finance", label: "Finance & Investing", cls: "text-pink-500" },
+              { key: "social", label: "Social & Relationships", cls: "text-cyan-500" },
+            ].map(({ key, label, cls }) => {
+              const domainSections = sections.filter((s) => s.domain === key)
+              if (domainSections.length === 0) return null
+              return (
+                <div key={key}>
+                  <h3 className={`mb-3 text-xs font-medium uppercase tracking-wider ${cls}`}>
+                    {label}
+                  </h3>
+                  <div className="space-y-4">
+                    {domainSections.map((s, i) => (
+                      <DomainSection key={`${key}-${i}`} section={s} />
                     ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {sections.filter((s) => s.domain === "career").length > 0 && (
-              <div>
-                <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-blue-500">
-                  Career & Education
-                </h3>
-                <div className="space-y-4">
-                  {sections
-                    .filter((s) => s.domain === "career")
-                    .map((s, i) => (
-                      <DomainSection key={`career-${i}`} section={s} />
-                    ))}
-                </div>
-              </div>
-            )}
+              )
+            })}
 
             {sections
               .filter((s) => s.domain === "methodology")

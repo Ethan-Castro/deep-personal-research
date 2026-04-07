@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { motion } from "framer-motion"
+import Lottie from "lottie-react"
 import { useResearchState } from "@/hooks/useResearchState"
 import { getAgentConfig } from "@/components/avatar/agentConfig"
 import { ActivityFeed } from "./ActivityFeed"
@@ -9,6 +10,9 @@ import { ToolCallCard } from "./ToolCallCard"
 import { FindingCard } from "./FindingCard"
 import type { Finding } from "@/lib/types"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import thinkingDots from "../../../public/lottie/thinking-dots.json"
+
+const ACTIVE_TYPES = new Set(["agent_thinking", "agent_tool_call"])
 
 export function TransparencyDock() {
   const selectedNodeId = useResearchState((s) => s.selectedNodeId)
@@ -26,6 +30,16 @@ export function TransparencyDock() {
   }, [selectedNodeId, findings])
 
   const config = selectedNodeId ? getAgentConfig(selectedNodeId) : null
+
+  // Agent is "actively working" if its most recent event is a thinking/tool_call
+  // and happened within the last 5 seconds
+  const isAgentActive = useMemo(() => {
+    if (!selectedNodeId) return false
+    const agentEvents = activityLog.filter((e) => e.agentId === selectedNodeId)
+    if (agentEvents.length === 0) return false
+    const latest = agentEvents[agentEvents.length - 1]
+    return ACTIVE_TYPES.has(latest.type) && Date.now() - latest.timestamp < 5000
+  }, [selectedNodeId, activityLog])
 
   return (
     <motion.div
@@ -46,6 +60,16 @@ export function TransparencyDock() {
             <span className="text-[10px] font-semibold text-foreground">
               {config.displayName}
             </span>
+            {isAgentActive && (
+              <div className="flex items-center" style={{ width: 24, height: 12 }}>
+                <Lottie
+                  animationData={thinkingDots}
+                  loop
+                  autoplay
+                  style={{ width: 24, height: 12 }}
+                />
+              </div>
+            )}
             <span className="text-[9px] text-muted-foreground">
               — {filteredEvents.length} events
               {agentFindings.length > 0 &&

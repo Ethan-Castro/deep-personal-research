@@ -1,7 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Database, Search, Loader2 } from "lucide-react"
+import Lottie from "lottie-react"
+import { Database, Search } from "lucide-react"
+import searchRadar from "../../../public/lottie/search-radar.json"
 
 interface ToolCallCardProps {
   toolName: string
@@ -31,7 +33,12 @@ export function ToolCallCard({ toolName, query, isActive }: ToolCallCardProps) {
     >
       <div className="mt-0.5 shrink-0">
         {isActive ? (
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          <Lottie
+            animationData={searchRadar}
+            loop
+            autoplay
+            style={{ width: 12, height: 12 }}
+          />
         ) : (
           <Icon className="h-3 w-3 text-muted-foreground" />
         )}

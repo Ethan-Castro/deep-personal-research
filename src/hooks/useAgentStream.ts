@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from "react"
 import { useResearchState } from "./useResearchState"
 import type { AgentEvent } from "@/lib/events"
-import type { Finding, Insight, ReportSection } from "@/lib/types"
+import type { Finding, Insight, ReportSection, WorkoutPlan, CareerGuide } from "@/lib/types"
 
 let nodeCounter = 0
 
@@ -169,6 +169,18 @@ export function useAgentStream(sessionId: string | null) {
           const section = event.data.section as ReportSection
           store.addReportSection(section)
           store.setStatus("writing")
+          break
+        }
+
+        case "workout_plan_generated": {
+          const plan = event.data.workoutPlan as WorkoutPlan
+          store.setWorkoutPlan(plan)
+          break
+        }
+
+        case "career_guide_generated": {
+          const guide = event.data.careerGuide as CareerGuide
+          store.setCareerGuide(guide)
           break
         }
 

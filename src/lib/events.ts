@@ -10,6 +10,8 @@ export type AgentEventType =
   | "edge_created"
   | "insight_synthesized"
   | "report_section"
+  | "workout_plan_generated"
+  | "career_guide_generated"
   | "research_complete"
   | "timeout_warning"
   | "error"

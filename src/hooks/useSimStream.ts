@@ -42,20 +42,41 @@ export function useSimStream(events?: SimEvent[]) {
         case "agent_spawned": {
           const agentId = event.agentId
           const parentId = event.parentId ?? "center"
+          const nodeType = (event.data.nodeType as string) ?? "agent"
+          const labGroupId = event.data.labGroupId as string | undefined
 
-          store.addNode({
+          const nodeData: Record<string, unknown> = {
+            label: event.data.name,
+            role: event.data.role,
+            team: event.data.team,
+            status: "running",
+            thought: "",
+            description: event.data.description,
+          }
+
+          // Pass through lab-specific data
+          if (event.data.labColor) nodeData.labColor = event.data.labColor
+          if (event.data.labId) nodeData.labId = event.data.labId
+
+          const node: Record<string, unknown> = {
             id: agentId,
-            type: "agent",
+            type: nodeType,
             position: { x: 0, y: 0 },
-            data: {
-              label: event.data.name,
-              role: event.data.role,
-              team: event.data.team,
-              status: "running",
-              thought: "",
-              description: event.data.description,
-            },
-          })
+            data: nodeData,
+          }
+
+          // Lab group nodes get explicit dimensions
+          if (nodeType === "labGroup") {
+            node.style = { width: 500, height: 420 }
+          }
+
+          // Agents inside lab groups get parentId + extent
+          if (labGroupId) {
+            node.parentId = labGroupId
+            node.extent = "parent"
+          }
+
+          store.addNode(node as import("@xyflow/react").Node)
 
           store.addEdge({
             id: `e_${parentId}_${agentId}`,

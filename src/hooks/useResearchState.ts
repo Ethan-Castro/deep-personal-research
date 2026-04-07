@@ -2,7 +2,7 @@
 
 import { create } from "zustand"
 import type { Node, Edge } from "@xyflow/react"
-import type { Finding, Insight, ReportSection } from "@/lib/types"
+import type { Finding, Insight, ReportSection, WorkoutPlan, CareerGuide } from "@/lib/types"
 import type { AgentEvent } from "@/lib/events"
 
 interface ResearchStore {
@@ -31,6 +31,8 @@ interface ResearchStore {
   insights: Insight[]
   reportSections: ReportSection[]
   reportId: string | null
+  workoutPlan: WorkoutPlan | null
+  careerGuide: CareerGuide | null
 
   // Activity log
   activityLog: AgentEvent[]
@@ -46,6 +48,8 @@ interface ResearchStore {
   addInsight: (insight: Insight) => void
   addReportSection: (section: ReportSection) => void
   setReportId: (id: string) => void
+  setWorkoutPlan: (plan: WorkoutPlan) => void
+  setCareerGuide: (guide: CareerGuide) => void
   addActivity: (event: AgentEvent) => void
   reset: () => void
 }
@@ -60,6 +64,8 @@ const initialState = {
   insights: [],
   reportSections: [],
   reportId: null,
+  workoutPlan: null,
+  careerGuide: null,
   activityLog: [],
 }
 
@@ -105,6 +111,10 @@ export const useResearchState = create<ResearchStore>((set) => ({
     })),
 
   setReportId: (id) => set({ reportId: id }),
+
+  setWorkoutPlan: (plan) => set({ workoutPlan: plan }),
+
+  setCareerGuide: (guide) => set({ careerGuide: guide }),
 
   addActivity: (event) =>
     set((state) => ({

@@ -2,6 +2,8 @@ import { generateBrief } from "./briefGenerator"
 import { runSupervisor } from "./supervisor"
 import { synthesizeFindings } from "./synthesizer"
 import { writeReport } from "./reportWriter"
+import { writeWorkoutPlan } from "./workoutPlanWriter"
+import { writeCareerGuide } from "./careerGuideWriter"
 import { gradeEvidence } from "@/tools/evidenceGrader"
 import type { Finding, Report, SessionState } from "@/lib/types"
 import type { EmitFn } from "@/lib/events"
@@ -81,6 +83,26 @@ export async function runResearchPipeline(
     session.id,
     emit
   )
+
+  // Step 6: Generate additional outputs based on research type
+  const hasHealth = session.researchType === "health" || session.researchType === "both"
+  const hasCareer = session.researchType === "career" || session.researchType === "both"
+
+  const additionalOutputs: Promise<unknown>[] = []
+
+  if (hasHealth) {
+    additionalOutputs.push(
+      writeWorkoutPlan(gradedFindings, insights, brief, session.id, emit)
+    )
+  }
+
+  if (hasCareer) {
+    additionalOutputs.push(
+      writeCareerGuide(gradedFindings, insights, brief, session.id, emit)
+    )
+  }
+
+  await Promise.all(additionalOutputs)
 
   // Emit completion
   emit(

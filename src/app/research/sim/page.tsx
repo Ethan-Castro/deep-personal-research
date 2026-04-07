@@ -12,13 +12,16 @@ import { ReportView } from "@/components/report/ReportView"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, Dumbbell, GraduationCap, Map, Users } from "lucide-react"
+import { Loader2, Dumbbell, GraduationCap, Map, Users, FlaskConical, Building2 } from "lucide-react"
 import { SIM_EVENTS } from "@/lib/simData"
 import { SIM_CAREER_EVENTS } from "@/lib/simCareer"
+import { SIM_LAB_EVENTS } from "@/lib/simLab"
+import { SIM_INSTITUTION_EVENTS } from "@/lib/simInstitution"
+import { InstitutionCanvas } from "@/components/institution/InstitutionCanvas"
 import type { SimEvent } from "@/lib/simData"
 
-type Scenario = "health" | "career"
-type ViewMode = "avatars" | "constellation"
+type Scenario = "health" | "career" | "lab" | "institution"
+type ViewMode = "avatars" | "constellation" | "institution"
 
 const SCENARIOS: Record<Scenario, { events: SimEvent[]; label: string; description: string; icon: typeof Dumbbell }> = {
   health: {
@@ -32,6 +35,18 @@ const SCENARIOS: Record<Scenario, { events: SimEvent[]; label: string; descripti
     label: "Career & Education",
     description: "CS graduate — AI/ML career path, edtech market, skill gap analysis",
     icon: GraduationCap,
+  },
+  lab: {
+    events: SIM_LAB_EVENTS,
+    label: "Full Life Optimization (LAB)",
+    description: "24 agents, 4 domains — health, career, finance, social — multi-phase deep research",
+    icon: FlaskConical,
+  },
+  institution: {
+    events: SIM_INSTITUTION_EVENTS,
+    label: "Research Institution",
+    description: "10 labs, 62 agents — radial campus with PIs, RAs, specialists across all domains",
+    icon: Building2,
   },
 }
 
@@ -66,7 +81,7 @@ function SimSelector({ onSelect }: { onSelect: (s: Scenario) => void }) {
   )
 }
 
-function ViewToggle({ viewMode, onChange }: { viewMode: ViewMode; onChange: (v: ViewMode) => void }) {
+function ViewToggle({ viewMode, onChange, showInstitution }: { viewMode: ViewMode; onChange: (v: ViewMode) => void; showInstitution?: boolean }) {
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5">
       <Button
@@ -87,13 +102,25 @@ function ViewToggle({ viewMode, onChange }: { viewMode: ViewMode; onChange: (v: 
         <Map className="h-3 w-3" />
         Map
       </Button>
+      {showInstitution && (
+        <Button
+          variant={viewMode === "institution" ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => onChange("institution")}
+          className="h-6 gap-1 px-2 text-[10px]"
+        >
+          <Building2 className="h-3 w-3" />
+          Institution
+        </Button>
+      )}
     </div>
   )
 }
 
 function SimRunner({ scenario }: { scenario: Scenario }) {
   const config = SCENARIOS[scenario]
-  const [viewMode, setViewMode] = useState<ViewMode>("avatars")
+  const isInstitution = scenario === "institution"
+  const [viewMode, setViewMode] = useState<ViewMode>(isInstitution ? "institution" : "avatars")
   useSimStream(config.events)
 
   const status = useResearchState((s) => s.status)
@@ -120,12 +147,21 @@ function SimRunner({ scenario }: { scenario: Scenario }) {
             <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px]">
               SIM — {config.label}
             </Badge>
-            <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+            <ViewToggle viewMode={viewMode} onChange={setViewMode} showInstitution={isInstitution} />
             <ProgressBar status={status} />
           </div>
 
           {/* Main content area */}
-          {viewMode === "avatars" ? (
+          {viewMode === "institution" ? (
+            <>
+              <div className="flex-1">
+                <InstitutionCanvas />
+              </div>
+              <div className="absolute bottom-4 left-4 right-4 z-10 max-w-sm">
+                <StatusTimeline />
+              </div>
+            </>
+          ) : viewMode === "avatars" ? (
             <>
               <div className="flex-1">
                 <ResearchStage />

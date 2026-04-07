@@ -60,6 +60,7 @@ export const UserProfileSchema = z.object({
   name: z.string().min(1),
   healthProfile: HealthProfileSchema.optional(),
   careerProfile: CareerProfileSchema.optional(),
+  rfpText: z.string().optional(),
   uploadedDocuments: z
     .array(
       z.object({
@@ -73,11 +74,11 @@ export const UserProfileSchema = z.object({
 export type UserProfile = z.infer<typeof UserProfileSchema>
 
 // === Research Session ===
-export type ResearchType = "health" | "career" | "both"
+export type ResearchType = "health" | "career" | "both" | "rfp"
 
 export const StartResearchSchema = z.object({
   userProfile: UserProfileSchema,
-  researchType: z.enum(["health", "career", "both"]),
+  researchType: z.enum(["health", "career", "both", "rfp"]),
 })
 export type StartResearchInput = z.infer<typeof StartResearchSchema>
 
@@ -107,7 +108,7 @@ export interface Insight {
   content: string
   supportingFindings: string[]
   evidenceGrade: EvidenceGrade
-  domain: "health" | "career" | "cross_domain"
+  domain: "health" | "career" | "finance" | "social" | "cross_domain"
 }
 
 export interface ReportSection {
@@ -118,7 +119,7 @@ export interface ReportSection {
     url?: string
     evidenceGrade: EvidenceGrade
   }>
-  domain: "health" | "career" | "methodology" | "overview"
+  domain: "health" | "career" | "finance" | "social" | "methodology" | "overview"
 }
 
 export interface Report {
@@ -135,6 +136,71 @@ export interface Report {
   createdAt: number
 }
 
+// === Workout Plan Output ===
+export interface WorkoutExercise {
+  name: string
+  sets: number
+  reps: string // e.g. "8-12" or "30s"
+  restSeconds: number
+  notes?: string
+  evidenceGrade?: EvidenceGrade
+}
+
+export interface WorkoutDay {
+  dayName: string // e.g. "Monday — Push"
+  focus: string   // e.g. "Chest, Shoulders, Triceps"
+  exercises: WorkoutExercise[]
+  warmup?: string
+  cooldown?: string
+}
+
+export interface WorkoutPlan {
+  id: string
+  sessionId: string
+  title: string
+  overview: string
+  periodization: string
+  weeklySchedule: WorkoutDay[]
+  nutritionNotes?: string
+  supplementNotes?: string
+  progressionScheme: string
+  citations: Array<{ title: string; url?: string; evidenceGrade: EvidenceGrade }>
+  createdAt: number
+}
+
+// === Career Guide Output ===
+export interface CareerGuideSection {
+  id: string
+  title: string
+  content: string
+  icon: "target" | "trending" | "book" | "dollar" | "users" | "lightbulb" | "route" | "star"
+}
+
+export interface CareerPath {
+  title: string
+  matchScore: number // 0-100
+  salary: string
+  growthOutlook: string
+  description: string
+  requiredSkills: string[]
+  gapSkills: string[]
+}
+
+export interface CareerGuide {
+  id: string
+  sessionId: string
+  headline: string
+  summary: string
+  paths: CareerPath[]
+  sections: CareerGuideSection[]
+  actionItems: Array<{ text: string; priority: "high" | "medium" | "low"; timeline: string }>
+  citations: Array<{ title: string; url?: string; evidenceGrade: EvidenceGrade }>
+  createdAt: number
+}
+
+// === Output Type ===
+export type OutputType = "paper" | "workout_plan" | "career_guide"
+
 export interface SessionState {
   id: string
   userProfile: UserProfile
@@ -144,5 +210,7 @@ export interface SessionState {
   findings: Finding[]
   insights: Insight[]
   report?: Report
+  workoutPlan?: WorkoutPlan
+  careerGuide?: CareerGuide
   createdAt: number
 }

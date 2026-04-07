@@ -2,32 +2,12 @@
 
 import { useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  Brain,
-  Search,
-  Lightbulb,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  FileText,
-  Play,
-} from "lucide-react"
 import type { AgentEvent } from "@/lib/events"
 import { getAgentConfig } from "@/components/avatar/agentConfig"
+import { LottieEventIcon } from "./LottieEventIcon"
 
 interface ActivityFeedProps {
   events: AgentEvent[]
-}
-
-const eventIcons: Record<string, typeof Brain> = {
-  agent_spawned: Play,
-  agent_thinking: Brain,
-  agent_tool_call: Search,
-  agent_finding: Lightbulb,
-  agent_complete: CheckCircle2,
-  agent_error: AlertCircle,
-  insight_synthesized: Sparkles,
-  report_section: FileText,
 }
 
 function eventLabel(event: AgentEvent): string {
@@ -62,6 +42,7 @@ function eventLabel(event: AgentEvent): string {
 
 export function ActivityFeed({ events }: ActivityFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const now = Date.now()
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -73,9 +54,9 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
     <div ref={scrollRef} className="h-full overflow-y-auto px-3 py-2 space-y-1">
       <AnimatePresence initial={false}>
         {events.map((event, i) => {
-          const Icon = eventIcons[event.type] ?? Brain
           const config = getAgentConfig(event.agentId)
           const label = eventLabel(event)
+          const isNew = now - event.timestamp < 2000
 
           return (
             <motion.div
@@ -89,9 +70,10 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
                 className="mt-0.5 shrink-0 rounded-full p-0.5"
                 style={{ backgroundColor: `${config.teamColor}15` }}
               >
-                <Icon
-                  className="h-3 w-3"
-                  style={{ color: config.teamColor }}
+                <LottieEventIcon
+                  eventType={event.type}
+                  color={config.teamColor}
+                  isNew={isNew}
                 />
               </div>
               <div className="min-w-0 flex-1">

@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useRiveStateMachine } from "./useRiveStateMachine"
+import { useEffect, useRef, useState, useCallback } from "react"
 import type { AvatarState } from "./types"
 
 interface RiveAvatarProps {
@@ -10,30 +9,77 @@ interface RiveAvatarProps {
   size: number
 }
 
+// Check once at module level whether the .riv file exists
+let riveFileExists: boolean | null = null
+let riveCheckPromise: Promise<boolean> | null = null
+
+function checkRiveFile(): Promise<boolean> {
+  if (riveCheckPromise) return riveCheckPromise
+  riveCheckPromise = fetch("/rive/agent-avatar.riv", { method: "HEAD" })
+    .then((res) => {
+      riveFileExists = res.ok
+      return res.ok
+    })
+    .catch(() => {
+      riveFileExists = false
+      return false
+    })
+  return riveCheckPromise
+}
+
 export function RiveAvatar({ state, teamColor, size }: RiveAvatarProps) {
-  const { RiveComponent, containerRef, isLoaded } = useRiveStateMachine({ state, teamColor, size })
-  const [riveError, setRiveError] = useState(false)
+  const [useRive, setUseRive] = useState(riveFileExists === true)
+  const [checked, setChecked] = useState(riveFileExists !== null)
 
-  // Detect if the .riv file failed to load (404) and fall back to canvas avatar
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isLoaded) setRiveError(true)
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [isLoaded])
+    if (riveFileExists !== null) {
+      setUseRive(riveFileExists)
+      setChecked(true)
+      return
+    }
+    checkRiveFile().then((exists) => {
+      setUseRive(exists)
+      setChecked(true)
+    })
+  }, [])
 
-  if (riveError) {
+  // Until we know, render the canvas avatar immediately (no shimmer delay)
+  if (!checked || !useRive) {
     return <CanvasAvatar state={state} teamColor={teamColor} size={size} />
   }
 
+  return <RiveWrapper state={state} teamColor={teamColor} size={size} />
+}
+
+// Lazy-loaded Rive wrapper — only imported if .riv file actually exists
+function RiveWrapper({ state, teamColor, size }: RiveAvatarProps) {
+  const [RiveMod, setRiveMod] = useState<typeof import("./useRiveStateMachine") | null>(null)
+
+  useEffect(() => {
+    import("./useRiveStateMachine").then(setRiveMod)
+  }, [])
+
+  if (!RiveMod) {
+    return <CanvasAvatar state={state} teamColor={teamColor} size={size} />
+  }
+
+  return <RiveInner mod={RiveMod} state={state} teamColor={teamColor} size={size} />
+}
+
+function RiveInner({
+  mod,
+  state,
+  teamColor,
+  size,
+}: RiveAvatarProps & { mod: typeof import("./useRiveStateMachine") }) {
+  const { RiveComponent, containerRef, isLoaded } = mod.useRiveStateMachine({ state, teamColor, size })
+
   return (
     <div ref={containerRef} style={{ width: size, height: size }} className="relative">
-      {/* Loading shimmer */}
       {!isLoaded && (
-        <div
-          className="absolute inset-0 rounded-full animate-pulse bg-muted"
-          style={{ borderRadius: "50%" }}
-        />
+        <div className="absolute inset-0">
+          <CanvasAvatar state={state} teamColor={teamColor} size={size} />
+        </div>
       )}
       <RiveComponent style={{ width: size, height: size, opacity: isLoaded ? 1 : 0 }} />
     </div>
@@ -41,19 +87,23 @@ export function RiveAvatar({ state, teamColor, size }: RiveAvatarProps) {
 }
 
 // ---------------------------------------------------------------------------
-// CanvasAvatar — polished fallback rendered on an HTML canvas
-// Mimics the Rive state machine: idle aura, animated eyes, mouth morphing
+// CanvasAvatar — polished animated avatar rendered on HTML canvas
+// State-machine-driven: aura, eyes, mouth all respond to AvatarState
 // ---------------------------------------------------------------------------
 
 function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animRef = useRef<number>(0)
-  const timeRef = useRef<number>(0)
   const stateRef = useRef<AvatarState>(state)
 
   useEffect(() => {
     stateRef.current = state
   }, [state])
+
+  const hexToRgb = useCallback((hex: string) => {
+    const n = parseInt(hex.replace("#", ""), 16)
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -61,7 +111,6 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Retina scaling
     const dpr = window.devicePixelRatio || 1
     canvas.width = size * dpr
     canvas.height = size * dpr
@@ -70,11 +119,6 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
     const cx = size / 2
     const cy = size / 2
     const r = size / 2 - 3
-
-    function hexToRgb(hex: string) {
-      const n = parseInt(hex.replace("#", ""), 16)
-      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
-    }
 
     function draw(t: number) {
       const s = stateRef.current
@@ -126,6 +170,15 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
       ctx!.lineWidth = 1
       ctx!.stroke()
 
+      // --- Inner gradient highlight ---
+      const grad = ctx!.createRadialGradient(cx - r * 0.2, cy - r * 0.3, 0, cx, cy, r - 2)
+      grad.addColorStop(0, `rgba(${col},0.12)`)
+      grad.addColorStop(1, `rgba(${col},0.02)`)
+      ctx!.beginPath()
+      ctx!.arc(cx, cy, r - 3, 0, Math.PI * 2)
+      ctx!.fillStyle = grad
+      ctx!.fill()
+
       // --- Eyes ---
       const eyeSpacing = size * 0.14
       const eyeRx = size * 0.055
@@ -133,7 +186,6 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
       const eyeY = cy - size * 0.06
 
       if (s === "error") {
-        // X eyes
         ctx!.strokeStyle = `rgba(${col},0.8)`
         ctx!.lineWidth = 2
         ctx!.lineCap = "round"
@@ -148,24 +200,28 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
           ctx!.stroke()
         }
       } else if (s === "complete") {
-        // Closed (line) eyes
+        // Happy closed eyes (arcs, not lines)
         ctx!.strokeStyle = `rgba(${col},0.8)`
         ctx!.lineWidth = 2
         ctx!.lineCap = "round"
         for (const ex of [cx - eyeSpacing, cx + eyeSpacing]) {
           ctx!.beginPath()
-          ctx!.moveTo(ex - eyeRx, eyeY)
-          ctx!.lineTo(ex + eyeRx, eyeY)
+          ctx!.arc(ex, eyeY + eyeRy * 0.3, eyeRx, Math.PI, 0)
           ctx!.stroke()
         }
       } else {
-        // Animated eyes
         let scaleY = 1
         if (s === "searching") scaleY = 0.55
         else if (s === "found") scaleY = 1.3
-        // thinking: slight oscillation
+
         let offsetX = 0
         if (s === "thinking") offsetX = 2.5 * Math.sin(t * 2)
+
+        // Blink every ~3s
+        const blinkCycle = t % 3.5
+        if (blinkCycle > 3.3 && blinkCycle < 3.5 && s !== "searching") {
+          scaleY *= 0.1
+        }
 
         ctx!.fillStyle = `rgba(${col},0.8)`
         for (const ex of [cx - eyeSpacing, cx + eyeSpacing]) {
@@ -176,6 +232,16 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
           ctx!.ellipse(0, 0, eyeRx, eyeRy, 0, 0, Math.PI * 2)
           ctx!.fill()
           ctx!.restore()
+        }
+
+        // Pupils (small highlight dot)
+        if (s !== "searching") {
+          ctx!.fillStyle = `rgba(255,255,255,0.5)`
+          for (const ex of [cx - eyeSpacing, cx + eyeSpacing]) {
+            ctx!.beginPath()
+            ctx!.arc(ex + offsetX - eyeRx * 0.3, eyeY - eyeRy * 0.3, eyeRx * 0.3, 0, Math.PI * 2)
+            ctx!.fill()
+          }
         }
       }
 
@@ -189,36 +255,42 @@ function CanvasAvatar({ state, teamColor, size }: RiveAvatarProps) {
         const wave = 2 * Math.sin(t * 3)
         ctx!.moveTo(cx - 6, mouthY)
         ctx!.bezierCurveTo(cx - 3, mouthY + wave, cx + 3, mouthY - wave, cx + 6, mouthY)
+        ctx!.stroke()
       } else if (s === "searching") {
-        ctx!.arc(cx, mouthY - 2, 4, 0, Math.PI * 2)
-        ctx!.fillStyle = `rgba(${col},0.25)`
+        // Small "o" mouth
+        ctx!.beginPath()
+        ctx!.arc(cx, mouthY, 3.5, 0, Math.PI * 2)
+        ctx!.fillStyle = `rgba(${col},0.2)`
         ctx!.fill()
-        return
+        ctx!.strokeStyle = `rgba(${col},0.4)`
+        ctx!.lineWidth = 1
+        ctx!.stroke()
       } else if (s === "found" || s === "complete") {
         ctx!.moveTo(cx - 6, mouthY - 1)
         ctx!.quadraticCurveTo(cx, mouthY + 5, cx + 6, mouthY - 1)
+        ctx!.stroke()
       } else if (s === "error") {
-        ctx!.moveTo(cx - 6, mouthY + 2)
-        ctx!.quadraticCurveTo(cx, mouthY - 3, cx + 6, mouthY + 2)
+        ctx!.moveTo(cx - 5, mouthY + 2)
+        ctx!.quadraticCurveTo(cx, mouthY - 3, cx + 5, mouthY + 2)
+        ctx!.stroke()
       } else {
-        ctx!.moveTo(cx - 6, mouthY)
-        ctx!.lineTo(cx + 6, mouthY)
+        // Neutral — slight curve
+        ctx!.moveTo(cx - 5, mouthY)
+        ctx!.quadraticCurveTo(cx, mouthY + 1, cx + 5, mouthY)
+        ctx!.stroke()
       }
-      ctx!.stroke()
     }
 
     let start: number | null = null
     function loop(ts: number) {
       if (!start) start = ts
-      const elapsed = (ts - start) / 1000
-      timeRef.current = elapsed
-      draw(elapsed)
+      draw((ts - start) / 1000)
       animRef.current = requestAnimationFrame(loop)
     }
 
     animRef.current = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(animRef.current)
-  }, [size, teamColor]) // teamColor triggers re-init for new color
+  }, [size, teamColor, hexToRgb])
 
   return (
     <canvas
